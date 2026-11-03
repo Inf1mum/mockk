@@ -427,9 +427,71 @@ fun coVerifySequence(
  * @see coVerifySequence
  *
  */
-fun coVerifyCount(verifyBlock: MockKCallCountCoVerificationScope.() -> Unit): Unit =
+fun coVerifyCount(verifyBlock: suspend MockKCallCountCoVerificationScope.() -> Unit): Unit =
     MockK.useImpl {
-        MockKCallCountCoVerificationScope().verifyBlock()
+        InternalPlatformDsl.runCoroutine {
+            MockKCallCountCoVerificationScope().verifyBlock()
+        }
+    }
+
+/**
+ * Verifies that the total number of unique calls matching any of the calls inside [verifyBlock]
+ * is within the requested bounds.
+ *
+ * The block may declare several alternative call patterns; a recorded call matching more than one
+ * pattern is counted only once. Order of the calls is not checked.
+ *
+ * Example: check that exactly one of the two methods was called:
+ * ```
+ * verifyAny(exactly = 1) {
+ *     player.resume()
+ *     player.toggleResume()
+ * }
+ * ```
+ *
+ * @see coVerifyAny Coroutine version
+ * @see verify
+ */
+fun verifyAny(
+    inverse: Boolean = false,
+    atLeast: Int = 1,
+    atMost: Int = Int.MAX_VALUE,
+    exactly: Int = -1,
+    timeout: Long = 0,
+    verifyBlock: MockKVerificationScope.() -> Unit,
+): Unit =
+    MockK.useImpl {
+        MockKDsl.internalVerifyAny(inverse, atLeast, atMost, exactly, timeout, verifyBlock)
+    }
+
+/**
+ * Verifies that the total number of unique calls matching any of the calls inside [verifyBlock]
+ * is within the requested bounds. Coroutine version.
+ *
+ * The block may declare several alternative call patterns; a recorded call matching more than one
+ * pattern is counted only once. Order of the calls is not checked.
+ *
+ * Example: check that exactly one of the two methods was called:
+ * ```
+ * coVerifyAny(exactly = 1) {
+ *     player.resume()
+ *     player.toggleResume()
+ * }
+ * ```
+ *
+ * @see verifyAny
+ * @see coVerify
+ */
+fun coVerifyAny(
+    inverse: Boolean = false,
+    atLeast: Int = 1,
+    atMost: Int = Int.MAX_VALUE,
+    exactly: Int = -1,
+    timeout: Long = 0,
+    verifyBlock: suspend MockKVerificationScope.() -> Unit,
+): Unit =
+    MockK.useImpl {
+        MockKDsl.internalCoVerifyAny(inverse, atLeast, atMost, exactly, timeout, verifyBlock)
     }
 
 /**
